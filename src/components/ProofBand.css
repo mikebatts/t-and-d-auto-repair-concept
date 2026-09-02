@@ -1,0 +1,55 @@
+.proof {
+  padding-block: 2rem 2.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.proof__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+
+.proof__cell {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.25rem 1.1rem;
+  background: var(--paper);
+  min-width: 0;
+}
+
+.proof__big {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font: 700 clamp(1.6rem, 1.1rem + 1.6vw, 2.5rem) / 1 var(--font-display);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.proof__star {
+  color: var(--lift);
+  fill: var(--lift);
+}
+
+.proof__small {
+  font-size: 0.9rem;
+  color: var(--fg-muted);
+}
+
+.proof__note {
+  margin-top: 0.9rem;
+  font-size: 0.8rem;
+  color: var(--fg-muted);
+}
+
+@media (min-width: 768px) {
+  .proof__row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .proof__cell {
+    padding: 1.5rem 1.5rem;
+  }
+}

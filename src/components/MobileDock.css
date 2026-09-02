@@ -1,0 +1,43 @@
+.dock {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .dock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+    min-height: var(--dock-h);
+    padding: 0.6rem var(--gutter);
+    padding-bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in srgb, var(--ink-900) 94%, transparent);
+    border-top: 1px solid var(--ink-700);
+    color: var(--paper);
+    transform: translateY(100%);
+    visibility: hidden;
+    --fg: var(--paper);
+    --focus: var(--lift-soft);
+  }
+
+  .dock[data-visible] {
+    transform: none;
+    visibility: visible;
+  }
+
+  .dock__btn {
+    min-height: 3rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .dock {
+      transition:
+        transform 0.3s var(--ease-out),
+        visibility 0.3s;
+    }
+  }
+}

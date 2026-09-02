@@ -1,0 +1,49 @@
+.recep {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.recep__log {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--paper-3);
+  background: var(--white);
+  max-height: 18rem;
+  overflow: auto;
+}
+
+.recep__turn {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.recep__ask,
+.recep__said {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.98rem;
+}
+
+.recep__said {
+  padding-left: 1rem;
+  border-left: 2px solid var(--lift);
+}
+
+.recep__who {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.recep__form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.recep__handoff {
+  color: var(--ink-500);
+}

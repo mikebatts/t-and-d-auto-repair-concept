@@ -1,0 +1,98 @@
+.contact {
+  border-top: 1px solid var(--rule);
+}
+
+.contact__grid {
+  display: grid;
+  gap: 2.5rem;
+}
+
+.contact__ledger .ledger__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.contact__ledger .ledger__key svg {
+  color: var(--lift);
+}
+
+.contact__ledger .ledger__row {
+  padding: 1.1rem 0;
+}
+
+.contact__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  color: var(--link);
+  font-weight: 500;
+}
+
+.contact__hours {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 22rem;
+}
+
+.contact__hours li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.contact__hours-note {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+}
+
+.contact__cta {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border: 1px solid var(--ink-700);
+}
+
+.contact__cta-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.contact__cta-title {
+  font: 700 clamp(1.6rem, 1.1rem + 1.6vw, 2.4rem) / 1.1 var(--font-display);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.contact__cta-text {
+  color: var(--fg-muted);
+  max-width: 40ch;
+}
+
+.contact__cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.contact__cta-note {
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+}
+
+@media (min-width: 1024px) {
+  .contact__grid {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+    column-gap: var(--gutter);
+    align-items: start;
+  }
+}

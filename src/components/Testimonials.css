@@ -1,0 +1,71 @@
+.reviews {
+  border-top: 1px solid var(--rule);
+}
+
+.carousel {
+  display: grid;
+  gap: 2rem;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+  border: 1px solid var(--rule);
+  background: var(--white);
+}
+
+.carousel__viewport {
+  min-height: 12rem;
+}
+
+.carousel__slide {
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* `display: grid` above would otherwise beat the browser's own
+   `[hidden] { display: none }` and every slide would stack in the viewport.
+   Only the active slide renders; the rest stay out of layout and out of the
+   accessibility tree. */
+.carousel__slide[hidden] {
+  display: none !important;
+}
+
+.carousel__quote p {
+  font: 500 clamp(1.35rem, 1rem + 1.4vw, 2.1rem) / 1.3 var(--font-display);
+  letter-spacing: -0.01em;
+  max-width: 34ch;
+  text-wrap: pretty;
+}
+
+.carousel__cite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.75rem;
+}
+
+.carousel__cite cite {
+  font-style: normal;
+  font-weight: 600;
+}
+
+.carousel__source {
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+}
+
+.carousel__controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+}
+
+.carousel__btn {
+  width: 3rem;
+  height: 3rem;
+}
+
+.carousel__count {
+  min-width: 4.5rem;
+  text-align: center;
+  color: var(--fg-muted);
+}

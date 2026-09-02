@@ -1,0 +1,73 @@
+/* T & D Auto Repair concept: a technical Brooklyn service ledger.
+   Graphite and workshop white carry the page; cobalt is structural
+   (rules, ticks, focus, the one primary button); a single tail-light red
+   appears only as a small signal dot and for error text. */
+
+:root {
+  --ink-950: #0f1113;
+  --ink-900: #151719;
+  --ink-800: #1d2023;
+  --ink-700: #2a2e33;
+  --ink-600: #3b4046;
+  --ink-500: #5b6168;
+  --ink-400: #7f858c;
+  --ink-300: #a9aeb4;
+  --paper: #f3f2ee;
+  --paper-2: #eae8e2;
+  --paper-3: #dbd8d0;
+  --white: #fbfaf8;
+  --lift: #1f4fd8;
+  --lift-deep: #173ea8;
+  --lift-soft: #8aa4ff;
+  --lift-tint: #e2e8fb;
+  --signal: #d7262d;
+  --signal-text: #b3261e;
+
+  --font-display: 'Cabinet Grotesk', 'Avenir Next', 'Helvetica Neue', sans-serif;
+  --font-body: 'IBM Plex Sans Variable', 'IBM Plex Sans', 'Helvetica Neue', sans-serif;
+
+  --container: 86rem;
+  --measure-hero: 72rem;
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --col-gap: 1.5rem;
+  --header-h: 4rem;
+  --section: clamp(5rem, 10vw, 9rem);
+  --dock-h: 4.25rem;
+  --radius: 4px;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* Surface-dependent tokens. Light (workshop white) by default. */
+  --bg: var(--paper);
+  --fg: var(--ink-900);
+  --fg-muted: var(--ink-500);
+  --rule: var(--paper-3);
+  --rule-strong: var(--ink-900);
+  --focus: var(--lift);
+  --link: var(--lift-deep);
+  --field-bg: var(--white);
+}
+
+.surface-dark {
+  --bg: var(--ink-900);
+  --fg: var(--paper);
+  --fg-muted: var(--ink-300);
+  --rule: var(--ink-700);
+  --rule-strong: var(--paper);
+  --focus: var(--lift-soft);
+  --link: var(--lift-soft);
+  --field-bg: var(--ink-800);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.surface-deep {
+  --bg: var(--ink-950);
+  --fg: var(--paper);
+  --fg-muted: var(--ink-300);
+  --rule: var(--ink-700);
+  --rule-strong: var(--paper);
+  --focus: var(--lift-soft);
+  --link: var(--lift-soft);
+  background: var(--bg);
+  color: var(--fg);
+}

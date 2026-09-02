@@ -1,0 +1,24 @@
+.statement {
+  padding-block: var(--section);
+  border-top: 1px solid var(--rule);
+}
+
+.statement__text {
+  font: 700 clamp(1.75rem, 1rem + 2.7vw, 3.4rem) / 1.15 var(--font-display);
+  letter-spacing: -0.02em;
+  max-width: 26ch;
+  text-wrap: pretty;
+}
+
+.statement__word {
+  display: inline;
+}
+
+.statement__note {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 2.5rem;
+  max-width: 52ch;
+  color: var(--fg-muted);
+}
