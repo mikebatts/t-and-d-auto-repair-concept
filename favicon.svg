@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="T and D monogram">
+  <rect width="64" height="64" rx="10" fill="#121416"/>
+  <path d="M9 15h23v7h-8v27h-7V22H9z" fill="#f4f3ef"/>
+  <path fill="#f4f3ef" fill-rule="evenodd" d="M36 15h9.5C52.4 15 58 20.6 58 27.5v9C58 43.4 52.4 49 45.5 49H36zm7 7v20h2.5c3.1 0 5.5-2.4 5.5-5.5v-9c0-3.1-2.4-5.5-5.5-5.5z"/>
+  <rect x="9" y="52" width="49" height="3" fill="#1f4fd8"/>
+</svg>
