@@ -82,10 +82,14 @@
   color: var(--lift-soft);
 }
 
+/* The storefront render is a 21:9 banner whose sign, address, and phone sit
+   between 24% and 72% of its width. Every plane below is landscape with the
+   full image height visible, and the crop is centered on the sign, so the
+   lettering survives at 320px and at 1440px alike. */
 .hero__plane {
   grid-column: full;
   margin-top: 0.75rem;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   background: var(--ink-800);
 }
@@ -94,7 +98,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 62% 50%;
+  object-position: 48% 50%;
 }
 
 @media (min-width: 1024px) {
@@ -105,7 +109,7 @@
       [content-start] repeat(12, minmax(0, var(--col)))
       [content-end] minmax(calc(var(--gutter) - var(--col-gap)), 1fr)
       [full-end];
-    grid-template-rows: auto auto minmax(6rem, auto);
+    grid-template-rows: auto auto;
     column-gap: var(--col-gap);
     row-gap: 2.5rem;
   }
@@ -118,16 +122,16 @@
   .hero__copy {
     grid-column: content-start / span 5;
     grid-row: 2;
-    padding-bottom: 5rem;
+    padding-bottom: 4rem;
   }
 
+  /* Six content columns plus the right bleed, bottom-aligned to the section
+     edge. Kept at 4:3 rather than stretched to the row, so the crop never
+     turns portrait and clips the sign on narrower desktops. */
   .hero__plane {
     grid-column: 8 / full-end;
-    grid-row: 2 / 4;
+    grid-row: 2;
     margin-top: 2.5rem;
-    aspect-ratio: auto;
-    height: 100%;
-    min-height: 30rem;
-    max-height: 40rem;
+    align-self: end;
   }
 }

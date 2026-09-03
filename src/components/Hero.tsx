@@ -107,7 +107,8 @@ export default function Hero({ headingLevel }: HeroProps) {
             decoding="async"
           />
           <figcaption className="visually-hidden">
-            Concept render. Not a photograph of the shop.
+            Concept render of the 4th Avenue storefront, generated for this preview. Not a
+            photograph.
           </figcaption>
         </figure>
       </div>

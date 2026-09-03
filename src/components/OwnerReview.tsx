@@ -1,14 +1,16 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import {
-  Accessibility,
   ArrowDown,
+  ArrowRight,
   ClipboardList,
   Eye,
-  FileText,
   LayoutGrid,
   Moon,
+  PhoneIncoming,
   Rocket,
+  ShieldCheck,
   Smartphone,
+  Star,
   type LucideIcon,
 } from 'lucide-react'
 import { business } from '../lib/business'
@@ -19,141 +21,117 @@ interface OwnerReviewProps {
   onExit: () => void
 }
 
-interface Row {
-  label: string
+interface Change {
   today: string
   concept: string
 }
 
-/** Every "today" line was checked against tdautony.com and the Google profile on September 2, 2026. */
-const rows: Row[] = [
-  {
-    label: 'Opening',
-    today: 'The headline is the logo image. The page’s H1 has no readable text.',
-    concept: 'One line a customer can read on any phone: “One shop for the whole car.”',
-  },
-  {
-    label: 'Proof',
-    today: '4.9 from 102 Google reviews is not in the opening screen.',
-    concept: 'Rating, review count, years, and hours sit directly under the headline.',
-  },
-  {
-    label: 'Services',
-    today: 'Four labels: Mechanical, Bodywork, Electrical, Inspection.',
-    concept: 'Each area lists examples and has its own Start a request button.',
-  },
-  {
-    label: 'Requests',
-    today: 'Zero forms or inputs. Phone, cell, email, and a map link.',
-    concept:
-      'A guided request: name, phone, vehicle, kind of work, what’s going on, how to reach you. Simulated here.',
-  },
-  {
-    label: 'After hours',
-    today: 'No structured intake when the shop is closed.',
-    concept: 'Optional receptionist that captures a callback summary. Demo only.',
-  },
+/** Every "today" entry was checked against tdautony.com and the Google profile on September 2, 2026. */
+const changes: Change[] = [
+  { today: 'Google reputation', concept: 'Visible immediately' },
+  { today: 'Four service labels', concept: 'Examples + a next step' },
+  { today: 'Call or email only', concept: 'Guided request form' },
+  { today: 'No structured after-hours intake', concept: 'Optional callback summary' },
 ]
 
-const deliverables: { icon: LucideIcon; text: string }[] = [
-  { icon: Smartphone, text: 'Mobile-first redesign' },
-  {
-    icon: LayoutGrid,
-    text: 'Clearer service architecture: the four areas, with examples and a path to a request',
-  },
-  { icon: ClipboardList, text: 'Guided estimate and request form' },
-  { icon: FileText, text: 'Migration of the current content you approve' },
-  { icon: Accessibility, text: 'Performance and accessibility QA' },
-  { icon: Rocket, text: 'Launch support' },
+const included: { icon: LucideIcon; text: string }[] = [
+  { icon: Smartphone, text: 'Mobile-first site' },
+  { icon: ClipboardList, text: 'Service-request flow' },
+  { icon: Rocket, text: 'Launch + handoff' },
 ]
 
+/**
+ * Owner-facing decision screen rendered above the customer site for
+ * `?review=1`. Opening, three proof tiles, a four-row before/after ledger,
+ * the flat price, the optional receptionist, and one disclaimer. Nothing here
+ * is interactive beyond leaving review mode and an in-page anchor.
+ */
 export default function OwnerReview({ onExit }: OwnerReviewProps) {
   const scope = useRef<HTMLElement>(null)
-  const [replied, setReplied] = useState(false)
   useReveal(scope)
 
   return (
     <section className="review" aria-labelledby="review-title" ref={scope}>
-      <div className="container">
-        <p className="review__run">
-          <span className="tick" aria-hidden="true" />
-          Prepared for {business.name} · owner review · September 2026
-        </p>
-        <h1 id="review-title" className="review__title" tabIndex={-1}>
-          You already have the trust. This makes it easier to turn it into the next job.
-        </h1>
-        <p className="review__lede">
-          An independent concept for {business.siteLabel}, built only from what is already public:
-          your services, your testimonials, your Google rating, and your storefront. Everything
-          below this panel is the site as a customer would see it.
-        </p>
-        <div className="review__actions">
-          <button type="button" className="btn btn--ink btn--lg" onClick={onExit}>
-            <Eye size={20} aria-hidden="true" />
-            View customer site
-          </button>
-          <a className="btn btn--ghost btn--lg" href="#main">
-            Scroll to the concept
-            <ArrowDown size={20} aria-hidden="true" />
-          </a>
+      <div className="container review__grid">
+        <div className="review__open">
+          <p className="review__run">
+            <span className="tick" aria-hidden="true" />A website concept for {business.short} Auto
+            Repair
+          </p>
+          <h1 id="review-title" className="review__title" tabIndex={-1}>
+            Your reputation, easier to act on.
+          </h1>
+          <p className="review__lede">
+            {business.google.rating} stars. {business.google.reviews} reviews. One mobile-first site
+            for calls, service requests, and after-hours leads.
+          </p>
+          <div className="review__actions">
+            <button type="button" className="btn btn--ink btn--lg" onClick={onExit}>
+              <Eye size={20} aria-hidden="true" />
+              View customer site
+            </button>
+            <a className="btn btn--ghost btn--lg" href="#review-changes">
+              See what changed
+              <ArrowDown size={20} aria-hidden="true" />
+            </a>
+          </div>
         </div>
 
-        <div className="review__compare" data-reveal>
-          <div className="review__frames" aria-hidden="true">
-            <figure className="frame">
-              <div className="frame__screen frame__screen--today">
-                <span className="frame__logo" />
-                <span className="frame__line frame__line--short" />
-                <span className="frame__labels">
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <span className="frame__pill" />
-              </div>
-              <figcaption>Today</figcaption>
-            </figure>
-            <figure className="frame">
-              <div className="frame__screen frame__screen--concept">
-                <span className="frame__headline" />
-                <span className="frame__headline frame__headline--2" />
-                <span className="frame__proof">
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <span className="frame__bento">
-                  <i className="frame__bento--wide" />
-                  <i />
-                  <i />
-                  <i className="frame__bento--wide" />
-                </span>
-                <span className="frame__cta" />
-              </div>
-              <figcaption>This concept</figcaption>
-            </figure>
-          </div>
+        <ul className="review__proof" aria-label="What the concept leads with">
+          <li className="review-tile" data-reveal>
+            <span className="review-tile__icon" aria-hidden="true">
+              <ShieldCheck size={20} strokeWidth={1.75} />
+            </span>
+            <span className="review-tile__big">
+              {business.google.rating}
+              <Star size={17} aria-hidden="true" className="review-tile__star" />
+              <span className="visually-hidden">stars on Google</span>
+            </span>
+            <span className="review-tile__small">Trust up front</span>
+          </li>
+          <li className="review-tile" data-reveal data-reveal-delay={0.08}>
+            <span className="review-tile__icon" aria-hidden="true">
+              <LayoutGrid size={20} strokeWidth={1.75} />
+            </span>
+            <span className="review-tile__big">4 services</span>
+            <span className="review-tile__small">One request flow</span>
+          </li>
+          <li className="review-tile" data-reveal data-reveal-delay={0.16}>
+            <span className="review-tile__icon" aria-hidden="true">
+              <Moon size={20} strokeWidth={1.75} />
+            </span>
+            <span className="review-tile__big">After hours</span>
+            <span className="review-tile__small">Optional call capture</span>
+          </li>
+        </ul>
 
-          <div className="review__table" role="table" aria-label="Today compared with this concept">
-            <div className="review__thead" role="row">
-              <span role="columnheader">Area</span>
+        <section
+          id="review-changes"
+          className="review__changes"
+          aria-labelledby="review-changes-title"
+        >
+          <h2 id="review-changes-title" className="review__h2">
+            What changed
+          </h2>
+          <div className="review-flow" role="table" aria-label="Today compared with this concept">
+            <div className="review-flow__head" role="row">
               <span role="columnheader">Today</span>
               <span role="columnheader">This concept</span>
             </div>
-            {rows.map((r) => (
-              <div className="review__tr" role="row" key={r.label}>
-                <span className="review__td review__td--label" role="rowheader">
-                  {r.label}
+            {changes.map((c, i) => (
+              <div
+                className="review-flow__row"
+                role="row"
+                key={c.today}
+                data-reveal="left"
+                data-reveal-delay={i * 0.07}
+              >
+                <span className="review-flow__from" role="cell">
+                  {c.today}
                 </span>
-                <span className="review__td" role="cell">
-                  <span className="review__cell-key">Today</span>
-                  {r.today}
-                </span>
-                <span className="review__td review__td--concept" role="cell">
-                  <span className="review__cell-key">This concept</span>
-                  {r.concept}
+                <span className="review-flow__to" role="cell">
+                  <ArrowRight size={18} aria-hidden="true" className="review-flow__arrow" />
+                  {c.concept}
                 </span>
               </div>
             ))}
@@ -162,83 +140,46 @@ export default function OwnerReview({ onExit }: OwnerReviewProps) {
             Checked against {business.siteLabel} and the Google Business Profile on{' '}
             {business.google.checked}.
           </p>
-        </div>
+        </section>
 
-        <div className="review__cols">
-          <section className="review__block" aria-labelledby="review-kept" data-reveal>
-            <h2 id="review-kept" className="review__h2">
-              What’s kept
+        <div className="review__offer">
+          <section className="review-offer surface-dark" aria-labelledby="review-offer-title">
+            <h2 id="review-offer-title" className="visually-hidden">
+              Price and scope
             </h2>
-            <ul className="review__list">
-              <li>The four service areas: mechanical, bodywork, electrical, inspection.</li>
-              <li>Your customer testimonials, quoted exactly as written on the current site.</li>
-              <li>Shop phone, cell, and email exactly as published.</li>
-              <li>The charcoal-and-white storefront, carried into the palette.</li>
-              <li>Foreign and domestic; gas, diesel, hybrid, electric: your published range.</li>
-              <li>
-                T&amp;D says its staff includes ASE Certified Technicians. The concept keeps that as
-                your statement and does not recreate certification marks.
-              </li>
-              <li>Your past-work photos can replace the concept renders once you approve them.</li>
-            </ul>
-          </section>
-
-          <section
-            className="review__block review__block--price"
-            aria-labelledby="review-scope"
-            data-reveal
-          >
-            <h2 id="review-scope" className="review__h2">
-              Deliverables
-            </h2>
-            <p className="review__price">
-              <span className="review__price-num">$1,000</span>
-              <span className="review__price-word">flat</span>
+            <p className="review-offer__price">
+              <span className="review-offer__num">$1,000</span>{' '}
+              <span className="review-offer__word">flat</span>
             </p>
-            <ul className="review__deliverables">
-              {deliverables.map(({ icon: Icon, text }) => (
+            <p className="review-offer__lede">Finish the site, connect the domain, hand it over.</p>
+            <ul className="review-offer__list" aria-label="Included">
+              {included.map(({ icon: Icon, text }) => (
                 <li key={text}>
                   <Icon size={18} aria-hidden="true" />
                   <span>{text}</span>
                 </li>
               ))}
             </ul>
-            <p className="review__addon">
-              <Moon size={18} aria-hidden="true" />
-              <span>
-                <strong>Optional add-on:</strong> an AI phone receptionist that answers after hours,
-                collects job details, and hands off a callback summary. Final scope is discussed
-                separately.
-              </span>
+            <p className="review-offer__next">
+              To go ahead, reply to the email that brought you here.
             </p>
           </section>
+          <aside className="review-addon" aria-label="Optional add-on">
+            <PhoneIncoming size={20} aria-hidden="true" />
+            <div>
+              <p className="review-addon__title">Optional: AI phone receptionist</p>
+              <p className="review-addon__text">
+                Answers overflow or after-hours calls, collects the job details, and sends a
+                callback summary.
+              </p>
+            </div>
+          </aside>
         </div>
 
-        <div className="review__close" data-reveal>
-          <div className="review__yours">
-            <h2 className="review__h2">What stays yours</h2>
-            <p>
-              Your phone numbers, reviews, wording, and business identity remain yours. This is an
-              independent speculative redesign by Design For Anyone, not affiliated with or endorsed
-              by {business.name}. Nothing on this page is live and nothing is sent.
-            </p>
-          </div>
-          <div className="review__reply">
-            <button
-              type="button"
-              className="btn btn--primary btn--lg"
-              onClick={() => setReplied(true)}
-              aria-describedby="review-reply-note"
-            >
-              Reply to this email
-            </button>
-            <p id="review-reply-note" className="review__reply-note" aria-live="polite">
-              {replied
-                ? 'This preview can’t open your mail app. Reply directly to the email that brought you here. Nothing was sent from this page.'
-                : 'Simulated in this preview: replying happens in your email thread, not on this page.'}
-            </p>
-          </div>
-        </div>
+        <p className="review__legal">
+          Speculative concept by Design For Anyone, not affiliated with or endorsed by{' '}
+          {business.name}. The request and call demos on this page send nothing.
+        </p>
       </div>
     </section>
   )

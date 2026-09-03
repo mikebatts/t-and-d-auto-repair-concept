@@ -3,9 +3,10 @@
  * network. Verifies the base path, robots/meta expectations, that every
  * referenced asset exists, that the bundle carries the required copy and
  * disclosures, and that nothing in src/ or the bundle can send or store data.
- * Also pins two mobile QA regressions: inactive carousel slides carry an
- * explicit display:none rule, and the mobile dock is handed the review state
- * and renders nothing in owner-review mode.
+ * Also pins three regressions: inactive carousel slides carry an explicit
+ * display:none rule, the mobile dock is handed the review state and renders
+ * nothing in owner-review mode, and the shipped renders have the pixel sizes
+ * that src/lib/images.ts declares (no layout shift from a swapped master).
  *
  *   npm run smoke   (builds first, then runs this)
  */
@@ -168,11 +169,25 @@ const required = [
   'Concept demo—nothing was sent.',
   'Concept demo—not live',
   'After-hours calls, captured.',
-  'You already have the trust. This makes it easier to turn it into the next job.',
+  'A website concept for ',
+  'Your reputation, easier to act on.',
   'View customer site',
+  'See what changed',
+  'Trust up front',
+  'One request flow',
+  'Optional call capture',
+  'What changed',
+  'Visible immediately',
+  'Examples + a next step',
+  'Guided request form',
+  'Optional callback summary',
   '$1,000',
-  'What stays yours',
-  'T&D says its staff includes ASE Certified Technicians',
+  'Finish the site, connect the domain, hand it over.',
+  'Mobile-first site',
+  'Service-request flow',
+  'Launch + handoff',
+  'Answers overflow or after-hours calls, collects the job details, and sends a callback summary.',
+  'Speculative concept by Design For Anyone, not affiliated with or endorsed by',
   'David Schrager',
   'Mellica Askari',
   'Angela Lee',
@@ -189,6 +204,65 @@ check(
   'bundle contains 4.9 rating and 102 reviews',
   /rating:["'`]4\.9["'`]/.test(js) && /reviews:["'`]102["'`]/.test(js),
 )
+// The condensed owner pitch replaced the long thesis, the wireframe frames,
+// the five-row comparison, the "What's kept" list, and the simulated reply.
+for (const gone of [
+  'You already have the trust',
+  'What’s kept',
+  'What stays yours',
+  'Reply to this email',
+  'frame__screen',
+  'ASE Certified',
+]) {
+  check(`bundle no longer carries “${gone}”`, !js.includes(gone))
+}
+check(
+  'the only price in the bundle is $1,000 (no invented add-on pricing)',
+  (js.match(/\$\d{1,3}(,\d{3})+/g) ?? []).every((m) => m === '$1,000'),
+  (js.match(/\$\d{1,3}(,\d{3})+/g) ?? []).join(', '),
+)
+
+// Shipped render sizes must match the intrinsic sizes declared in images.ts,
+// which the <img width/height> attributes come from.
+const webpSize = (file) => {
+  const b = readFileSync(file)
+  if (b.toString('ascii', 0, 4) !== 'RIFF' || b.toString('ascii', 8, 12) !== 'WEBP') return null
+  const chunk = b.toString('ascii', 12, 16)
+  if (chunk === 'VP8X') return [b.readUIntLE(24, 3) + 1, b.readUIntLE(27, 3) + 1]
+  if (chunk === 'VP8L') {
+    const bits = b.readUInt32LE(21)
+    return [(bits & 0x3fff) + 1, ((bits >> 14) & 0x3fff) + 1]
+  }
+  if (chunk === 'VP8 ') return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff]
+  return null
+}
+const imagesSrc = readFileSync(join(root, 'src/lib/images.ts'), 'utf8')
+const declared = [...imagesSrc.matchAll(/set\(\s*'(\w+)',\s*\[([^\]]*)\],\s*(\d+),\s*(\d+),/g)].map(
+  (m) => ({
+    name: m[1],
+    widths: m[2].split(',').map((n) => Number(n.trim())),
+    w: Number(m[3]),
+    h: Number(m[4]),
+  }),
+)
+check('images.ts declares all four renders', declared.length === 4)
+for (const d of declared) {
+  const full = webpSize(join(dist, 'assets', `td-${d.name}.webp`))
+  check(
+    `td-${d.name}.webp is ${d.w}x${d.h} as images.ts declares`,
+    !!full && full[0] === d.w && full[1] === d.h,
+    full ? full.join('x') : 'unreadable',
+  )
+  for (const width of d.widths) {
+    const size = webpSize(join(dist, 'assets', `td-${d.name}-${width}.webp`))
+    const expectH = (width * d.h) / d.w
+    check(
+      `td-${d.name}-${width}.webp is ${width} wide at the same ratio`,
+      !!size && size[0] === width && Math.abs(size[1] - expectH) <= 1,
+      size ? size.join('x') : 'unreadable',
+    )
+  }
+}
 
 // Things that must not exist anywhere in our source or bundle.
 const srcFiles = walk(join(root, 'src')).filter((f) => /\.(ts|tsx|css)$/.test(f))

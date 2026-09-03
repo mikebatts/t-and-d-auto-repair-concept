@@ -12,9 +12,12 @@ const file = (name: string, width?: number) =>
   `${base}assets/td-${name}${width ? `-${width}` : ''}.webp`
 
 /**
- * All four are original generated concept renders. None is a photograph of
- * the real shop, its staff, its signage, or a customer's car. The unsuffixed
- * file is the staged original; the suffixed files are resized copies of it.
+ * All four are generated concept renders made for this preview, not
+ * photographs. The storefront render was produced from a reference photo of
+ * the building at 896 4th Ave, so its sign and facade are the real ones; the
+ * three workshop scenes are staged and the people in them are not T&D's
+ * staff or customers. The unsuffixed file is the staged original; the
+ * suffixed files are resized copies of it (see scripts/images.mjs).
  */
 const set = (
   name: string,
@@ -36,27 +39,27 @@ export const images = {
     [640, 1024, 1600],
     2688,
     1152,
-    'Concept render of a charcoal brick garage at dusk with the bay door open, two blue lifts lit inside, and a dark sedan pulling in from the street.',
+    'Concept render of the T & D Auto Repair storefront on 4th Avenue: a narrow charcoal brick building under a white sign that reads AUTO REPAIR with the address and phone number, a black roll-up door above a glass front, and a bright blue shopfront next door.',
   ),
   mechanical: set(
     'mechanical',
     [640, 1024, 1600],
     2048,
     1360,
-    'Concept render of a complete engine and transmission on a black rolling cart in a white brick shop beside a blue lift post.',
+    'Concept render of a removed engine and subframe on a steel rolling cart in a compact bay, with blue lift posts and a car with its hood up behind it.',
   ),
   electrical: set(
     'electrical',
     [640, 1024, 1600],
     2048,
     1360,
-    'Concept render of a technician holding a diagnostic tablet over an open engine bay with red test leads clipped in.',
+    'Concept render of a technician in a dark hoodie holding a rugged scan tablet over an open engine bay, with red and black test leads clipped to the battery.',
   ),
   bodywork: set(
     'bodywork',
     [640, 1024, 1600],
-    2688,
-    1520,
-    'Concept render of a technician checking the rear quarter panel of a white sedan with a handheld inspection light.',
+    2048,
+    1360,
+    'Concept render of a technician running a handheld line light along the rear quarter panel of a freshly finished white coupe.',
   ),
 } as const

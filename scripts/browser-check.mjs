@@ -7,14 +7,30 @@
  *   npm run qa:browser                 (in another terminal)
  *
  * At 320 / 390 / 768 / 1440 for both the customer URL and `?review=1`: no
- * horizontal overflow, one readable H1 with the expected text and line count,
- * noindex, no console errors, only same-origin GET requests, every motion
- * target visible after scrolling through, web fonts loaded. Then: the gapless
- * bento at 1440 (24 of 24 cells, titles horizontal), the request dialog at
- * 390 and 1440 (validation, preview state, Escape, focus return, service
- * pre-selection), the receptionist demo at 390, the carousel, review-mode
- * exit without a reload, the mobile dock, touch targets, focus visibility,
- * and reduced motion in both modes.
+ * horizontal overflow, one readable H1 with the expected text and at most two
+ * lines, noindex, no console errors, only same-origin GET requests, every
+ * motion target visible after scrolling through, web fonts loaded, and (for
+ * the customer page) the storefront sign, address, and phone inside the hero
+ * crop. Then: the gapless bento at 1440 (24 of 24 cells, titles horizontal),
+ * the request dialog at 390 and 1440 (validation, preview state, Escape,
+ * focus return, service pre-selection), the receptionist demo at 390, the
+ * carousel (real arrow keys on the focused controls, wrapping both ways, no
+ * autoplay), the owner pitch (three proof tiles, four change rows, price,
+ * add-on sentence, word budget, in-page anchor) and review-mode exit without
+ * a reload, the mobile dock, touch targets, focus visibility, and reduced
+ * motion in both modes.
+ *
+ * Determinism. Every pass starts with `open`, which sets the viewport and
+ * media state explicitly and refuses to continue unless the page is visible
+ * and producing animation frames; state changes are polled with `until`
+ * rather than guessed with fixed sleeps; keyboard checks confirm where focus
+ * is before a key is pressed. See `bootstrapTab` for the one agent-browser
+ * quirk this works around.
+ *
+ *   QA_ONLY=request,dock npm run qa:browser   (run a subset of passes: layout,
+ *                                              bento, request, carousel, review,
+ *                                              targets, motion, receptionist, dock)
+ *   QA_TRACE=1 npm run qa:browser             (log every CLI call with its time)
  */
 import { execFileSync } from 'node:child_process'
 
@@ -23,14 +39,19 @@ const SESSION = 'td-qa'
 const widths = [320, 390, 768, 1440]
 const failures = []
 
+const trace = process.env.QA_TRACE === '1'
 const ab = (...args) => {
+  const started = Date.now()
   try {
-    return execFileSync('agent-browser', ['--session', SESSION, ...args], {
+    const out = execFileSync('agent-browser', ['--session', SESSION, ...args], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       timeout: 60_000,
     }).trim()
+    if (trace) console.error(`  [${Date.now() - started}ms] ${args.join(' ').slice(0, 110)}`)
+    return out
   } catch (err) {
+    if (trace) console.error(`  [${Date.now() - started}ms] FAILED ${args.join(' ').slice(0, 110)}`)
     const out = `${err.stdout ?? ''}${err.stderr ?? ''}`.trim()
     throw new Error(`agent-browser ${args.join(' ')} failed: ${out}`, { cause: err })
   }
@@ -51,10 +72,65 @@ const check = (label, ok, detail = '') => {
   if (!ok) failures.push(line)
 }
 
-const open = (url, w, h = 900) => {
-  ab('set', 'viewport', String(w), String(h))
+/**
+ * Poll a page expression until `ok(value)` holds or the timeout passes, and
+ * return the last value either way, so the check that follows fails with a
+ * real detail rather than a stale snapshot.
+ */
+const until = (js, ok = Boolean, { timeout = 4000, every = 100 } = {}) => {
+  const end = Date.now() + timeout
+  for (;;) {
+    const v = evalJs(js)
+    if (ok(v) || Date.now() >= end) return v
+    ab('wait', String(every))
+  }
+}
+
+/**
+ * agent-browser 0.27 on macOS: a `press Escape` in the daemon's first tab
+ * sends that tab to the background for the rest of the session
+ * (document.visibilityState becomes 'hidden' and requestAnimationFrame stops),
+ * which silently starves IntersectionObserver callbacks, CSS transitions,
+ * GSAP, and Chrome's dialog `close` event, and the state survives every later
+ * `open` in that tab. Tabs created with `tab new` are unaffected, so the run
+ * moves to a fresh tab first and closes the original.
+ */
+const bootstrapTab = () => {
+  ab('open', 'about:blank')
+  ab('tab', 'new', 'about:blank')
+  const stale = ab('tab', 'list')
+    .split('\n')
+    .filter((line) => !line.trimStart().startsWith('→'))
+    .map((line) => line.match(/\[(t\d+)\]/)?.[1])
+    .filter(Boolean)
+  for (const id of stale) ab('tab', 'close', id)
+}
+
+const renderingProbe = `(async () => {
+  const raf = await Promise.race([
+    new Promise((r) => requestAnimationFrame(() => r(true))),
+    new Promise((r) => setTimeout(() => r(false), 500)),
+  ]);
+  return { vs: document.visibilityState, raf, reduced: matchMedia('(prefers-reduced-motion: reduce)').matches };
+})()`.replace(/\n/g, ' ')
+
+/**
+ * Navigate with explicit viewport and media state, then confirm the page is
+ * actually rendering (visible, animation frames running, reduced-motion as
+ * requested) before any check reads it. A page that is not rendering is an
+ * environment fault, not an app result, so it aborts the run.
+ */
+const open = (url, w, { height = 900, reducedMotion = false } = {}) => {
+  ab('set', 'viewport', String(w), String(height))
+  ab('set', 'media', 'light', ...(reducedMotion ? ['reduced-motion'] : []))
   ab('open', url)
   ab('wait', '--load', 'networkidle')
+  const live = evalJs(renderingProbe)
+  if (live.vs !== 'visible' || live.raf !== true || live.reduced !== reducedMotion) {
+    throw new Error(
+      `page is not in the requested state after open (visibility ${live.vs}, animation frame ${live.raf}, reduced motion ${live.reduced} wanted ${reducedMotion})`,
+    )
+  }
   ab('console', '--clear')
   ab('network', 'requests', '--clear')
 }
@@ -101,6 +177,31 @@ const layoutProbe = `(() => {
 })()`.replace(/\n/g, ' ')
 
 /**
+ * Where the hero image actually lands inside its plane, as fractions of the
+ * image. object-fit: cover with a percentage object-position is deterministic
+ * given the box, the natural size, and the position, so the crop can be
+ * checked without pixels.
+ */
+const heroCropProbe = `(() => {
+  const img = document.querySelector('.hero__img');
+  const box = img.getBoundingClientRect();
+  const nw = img.naturalWidth, nh = img.naturalHeight;
+  const pos = getComputedStyle(img).objectPosition.split(' ').map(parseFloat);
+  const scale = Math.max(box.width / nw, box.height / nh);
+  const rw = nw * scale, rh = nh * scale;
+  const ox = (box.width - rw) * (pos[0] / 100), oy = (box.height - rh) * (pos[1] / 100);
+  return { left: -ox / rw, right: (box.width - ox) / rw, top: -oy / rh, bottom: (box.height - oy) / rh, w: Math.round(box.width), h: Math.round(box.height), signPx: Math.round(rw * SIGN_W), nw, nh };
+})()`.replace(/\n/g, ' ')
+
+/**
+ * Where the white fascia sign sits in the storefront render, as fractions of
+ * the image: the panel with the T/D mark, AUTO REPAIR, the address, and the
+ * phone. Measured from the master; keep in sync if the render changes.
+ */
+const SIGN = { left: 0.24, right: 0.72, top: 0.07, bottom: 0.32 }
+const SIGN_W = SIGN.right - SIGN.left
+
+/**
  * Everything GSAP touches. After a full scroll-through nothing may be left
  * transparent, clipped, or mid-transform, except the deliberately scaled
  * stacked cards (checked for opacity only).
@@ -122,23 +223,37 @@ const motionProbe = `(() => {
   return { checked: els.length, hidden: bad.length, sample: bad.slice(0, 4).map((el) => el.className || el.tagName) };
 })()`.replace(/\n/g, ' ')
 
+/**
+ * An element's entrance tween has finished: visible, opaque, unmoved. Takes a
+ * page expression that yields the element.
+ */
+const settledExpr = (elementJs) =>
+  `(() => { const el = ${elementJs}; const cs = getComputedStyle(el); return cs.visibility === 'visible' && Number(cs.opacity) >= 0.99 && /^(none|matrix\\(1, 0, 0, 1, 0, 0\\))$/.test(cs.transform) })()`
+const settledProbe = (selector) =>
+  settledExpr(`document.querySelector(${JSON.stringify(selector)})`)
+
+/** The bento cell for a service, found by its visible title. */
+const bentoCell = (title) =>
+  `Array.from(document.querySelectorAll('.bento__cell')).find((c) => c.querySelector('h3').textContent === ${JSON.stringify(title)})`
+
 function layoutPass(url, w) {
   const review = url.includes('review=1')
   const label = `${w}px ${review ? 'review' : 'customer'}`
   open(url, w)
   const first = evalJs(layoutProbe)
+  // Scroll through twice: the pinned work stack adds a spacer on the first
+  // pass, so the document is taller the second time.
   evalJs('window.scrollTo(0, document.body.scrollHeight); "ok"')
-  ab('wait', '1200')
+  ab('wait', '600')
   evalJs('window.scrollTo(0, document.body.scrollHeight); "ok"')
-  ab('wait', '1500')
-  const motion = evalJs(motionProbe)
+  const motion = until(motionProbe, (m) => m.checked > 0 && m.hidden === 0)
   check(
     `${label}: every motion target visible after scrolling through`,
     motion.checked > 0 && motion.hidden === 0,
     `${motion.hidden} of ${motion.checked} hidden${motion.hidden ? `: ${motion.sample.join(', ')}` : ''}`,
   )
   evalJs('window.scrollTo(0, 0); "ok"')
-  ab('wait', '300')
+  until('window.scrollY === 0')
   const after = evalJs(layoutProbe)
   check(
     `${label}: no horizontal overflow`,
@@ -153,17 +268,20 @@ function layoutPass(url, w) {
   check(
     `${label}: H1 text is the expected one`,
     review
-      ? after.h1Text ===
-          'You already have the trust. This makes it easier to turn it into the next job.'
+      ? after.h1Text === 'Your reputation, easier to act on.'
       : after.h1Text === 'One shop for the whole car.',
     after.h1Text,
   )
+  check(`${label}: H1 is at most 2 lines`, after.h1Lines <= 2, `${after.h1Lines} lines`)
   if (!review) {
-    const max = w >= 1024 ? 2 : 3
+    const crop = evalJs(heroCropProbe.replace('SIGN_W', String(SIGN_W)))
     check(
-      `${label}: hero H1 is at most ${max} lines`,
-      after.h1Lines <= max,
-      `${after.h1Lines} lines`,
+      `${label}: storefront sign, address, and phone inside the hero crop`,
+      crop.left <= SIGN.left &&
+        crop.right >= SIGN.right &&
+        crop.top <= SIGN.top &&
+        crop.bottom >= SIGN.bottom,
+      `plane ${crop.w}x${crop.h}, image x ${crop.left.toFixed(2)}–${crop.right.toFixed(2)}, y ${crop.top.toFixed(2)}–${crop.bottom.toFixed(2)}, sign ${crop.signPx}px wide`,
     )
   }
   check(`${label}: noindex present`, /noindex/.test(after.robots))
@@ -185,7 +303,7 @@ function layoutPass(url, w) {
 function bentoPass() {
   open(BASE, 1440)
   evalJs("document.getElementById('service').scrollIntoView(); 'ok'")
-  ab('wait', '1500')
+  until(settledProbe('.bento'))
   const r = evalJs(
     `(() => {
       const grid = document.querySelector('.bento');
@@ -247,15 +365,28 @@ const clickSel = (selector) =>
   evalJs(`document.querySelector(${JSON.stringify(selector)}).click(); 'ok'`)
 const submitDialog = () => {
   evalJs("document.querySelector('dialog[open] form').requestSubmit(); 'ok'")
-  ab('wait', '200')
+  ab('wait', '150')
 }
+const dialogOpen = "!!document.querySelector('dialog[open]')"
+const dialogClosed = "!document.querySelector('dialog[open]')"
+/** The real key: Chrome's close watcher fires `cancel`, the app closes and returns focus. */
+const pressEscape = () => {
+  ab('press', 'Escape')
+  until(dialogClosed)
+}
+const activeIs = (selector) =>
+  evalJs(`document.activeElement === document.querySelector(${JSON.stringify(selector)})`)
+const activeDesc = () =>
+  evalJs(
+    "(() => { const a = document.activeElement; return a ? `${a.tagName.toLowerCase()}${a.className ? '.' + String(a.className).split(' ')[0] : ''} \"${(a.getAttribute('aria-label') || a.textContent || '').trim().slice(0, 24)}\"` : 'none' })()",
+  )
 
 function requestPass(w) {
   const label = `${w}px request`
   open(BASE, w)
   const trigger = '.hero__actions button'
   clickSel(trigger)
-  ab('wait', '400')
+  until(dialogOpen)
   check(
     `${label}: dialog opens as a modal`,
     evalJs("!!document.querySelector('dialog[open][aria-modal=true]')"),
@@ -299,41 +430,45 @@ function requestPass(w) {
     `${label}: preview echoes the vehicle and service`,
     /2016 Honda CR-V/.test(done) && /Bodywork/.test(done) && /Text me/.test(done),
   )
-  ab('press', 'Escape')
-  ab('wait', '250')
-  check(`${label}: Escape closes the dialog`, !evalJs("!!document.querySelector('dialog[open]')"))
+  pressEscape()
+  check(`${label}: Escape closes the dialog`, evalJs(dialogClosed))
   check(
     `${label}: scroll lock released`,
     !evalJs("document.documentElement.classList.contains('has-dialog')"),
   )
-  check(
-    `${label}: focus returned to the trigger`,
-    evalJs(`document.activeElement === document.querySelector(${JSON.stringify(trigger)})`),
-  )
+  check(`${label}: focus returned to the trigger`, activeIs(trigger), `focus on ${activeDesc()}`)
   // Reopen: values must be gone.
   clickSel(trigger)
-  ab('wait', '300')
+  until(dialogOpen)
   check(
     `${label}: reopened form is empty`,
     evalJs(
       "document.querySelector('dialog[open] input[name=name]').value === '' && document.querySelector('dialog[open] select[name=service]').value === ''",
     ),
   )
-  ab('press', 'Escape')
-  ab('wait', '200')
-  // Bento pre-selection.
-  evalJs("document.getElementById('service').scrollIntoView(); 'ok'")
-  ab('wait', '800')
-  evalJs(
-    "Array.from(document.querySelectorAll('.bento__cell')).find((c) => c.querySelector('h3').textContent === 'Electrical').querySelector('button').click(); 'ok'",
+  pressEscape()
+  // Bento pre-selection, from the Electrical cell as a visitor reaches it:
+  // scrolled into view and revealed. On phones the cells stack, so the cell
+  // is what has to be on screen, not just the grid.
+  evalJs(`${bentoCell('Electrical')}.scrollIntoView({ block: 'center' }); 'ok'`)
+  check(
+    `${label}: Electrical cell revealed once scrolled into view`,
+    until(settledExpr(bentoCell('Electrical'))) === true,
   )
-  ab('wait', '300')
+  evalJs(`${bentoCell('Electrical')}.querySelector('button').click(); 'ok'`)
+  until(dialogOpen)
   check(
     `${label}: Start a request pre-selects the service`,
     evalJs("document.querySelector('dialog[open] select[name=service]')?.value") === 'electrical',
   )
-  ab('press', 'Escape')
-  ab('wait', '200')
+  pressEscape()
+  check(
+    `${label}: focus returned to the bento control that opened it`,
+    evalJs(
+      "(() => { const a = document.activeElement; return !!a && a.tagName === 'BUTTON' && !!a.closest('.bento__cell') && a.closest('.bento__cell').querySelector('h3').textContent === 'Electrical' })()",
+    ),
+    `focus on ${activeDesc()}`,
+  )
   const offenders = networkOffenders()
   check(
     `${label}: zero POST or cross-origin requests`,
@@ -349,10 +484,10 @@ function receptionistPass(w) {
   open(BASE, w)
   const trigger = '#after-hours .after__cta'
   evalJs(`document.querySelector(${JSON.stringify(trigger)}).scrollIntoView(); 'ok'`)
-  ab('wait', '600')
+  until(settledProbe('#after-hours .after__sample'))
   clickSel(trigger)
-  ab('wait', '400')
-  check(`${label}: dialog opens`, evalJs("!!document.querySelector('dialog[open]')"))
+  until(dialogOpen)
+  check(`${label}: dialog opens`, evalJs(dialogOpen))
   check(
     `${label}: labelled as a demo`,
     /Concept demo—not live/.test(evalJs("document.querySelector('dialog[open]').textContent")),
@@ -399,12 +534,11 @@ function receptionistPass(w) {
     "document.querySelector('dialog[open] [role=log][aria-live=polite]')?.textContent ?? ''",
   )
   check(`${label}: transcript is a live log`, /Receptionist/.test(log) && /Sam Test/.test(log))
-  ab('press', 'Escape')
-  ab('wait', '250')
+  pressEscape()
   check(
     `${label}: Escape closes and focus returns`,
-    !evalJs("!!document.querySelector('dialog[open]')") &&
-      evalJs(`document.activeElement === document.querySelector(${JSON.stringify(trigger)})`),
+    evalJs(dialogClosed) && activeIs(trigger),
+    `dialog open ${evalJs(dialogOpen)}, focus on ${activeDesc()}`,
   )
   const offenders = networkOffenders()
   check(
@@ -418,11 +552,16 @@ function carouselPass(w) {
   const label = `${w}px carousel`
   open(BASE, w)
   evalJs("document.getElementById('reviews').scrollIntoView(); 'ok'")
-  ab('wait', '1200')
-  const state = () =>
-    evalJs(
-      "(() => { const shown = Array.from(document.querySelectorAll('.carousel__slide')).filter((s) => !s.hidden); return { shown: shown.length, label: shown[0]?.getAttribute('aria-label'), cite: shown[0]?.querySelector('cite')?.textContent, count: document.querySelector('.carousel__count').textContent, live: document.querySelector('.carousel__viewport').getAttribute('aria-live') } })()",
-    )
+  // The whole carousel is a reveal target; its controls cannot take focus
+  // until the entrance tween has finished.
+  check(
+    `${label}: carousel revealed after scrolling to it`,
+    until(settledProbe('.carousel')) === true,
+  )
+  const stateProbe =
+    "(() => { const shown = Array.from(document.querySelectorAll('.carousel__slide')).filter((s) => !s.hidden); return { shown: shown.length, label: shown[0]?.getAttribute('aria-label'), cite: shown[0]?.querySelector('cite')?.textContent, count: document.querySelector('.carousel__count').textContent, live: document.querySelector('.carousel__viewport').getAttribute('aria-live'), focus: document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.tagName } })()"
+  const state = () => evalJs(stateProbe)
+  const settle = (expected) => until(stateProbe, (s) => s.label === expected)
   const s0 = state()
   check(
     `${label}: one slide shown, polite live region, no autoplay attributes`,
@@ -430,27 +569,45 @@ function carouselPass(w) {
     JSON.stringify(s0),
   )
   clickSel('[aria-label="Next testimonial"]')
-  ab('wait', '600')
-  const s1 = state()
+  const s1 = settle('2 of 5')
   check(
     `${label}: Next advances to 2 of 5`,
     s1.label === '2 of 5' && s1.count === '2 of 5' && s1.cite !== s0.cite,
     JSON.stringify(s1),
   )
-  evalJs("document.querySelector('[aria-label=\"Previous testimonial\"]').focus(); 'ok'")
+  // Real key events on the focused control. Focus is confirmed before each
+  // press so a lost keystroke cannot be mistaken for app behaviour.
+  ab('focus', '[aria-label="Previous testimonial"]')
+  const f1 = state().focus
   ab('press', 'ArrowLeft')
-  ab('wait', '600')
-  const s2 = state()
+  const s2 = settle('1 of 5')
   check(
-    `${label}: ArrowLeft goes back to 1 of 5`,
-    s2.label === '1 of 5' && s2.cite === s0.cite,
-    JSON.stringify(s2),
+    `${label}: ArrowLeft on the focused Previous control goes back to 1 of 5`,
+    f1 === 'Previous testimonial' && s2.label === '1 of 5' && s2.cite === s0.cite,
+    `focus on ${f1}; ${JSON.stringify(s2)}`,
+  )
+  ab('press', 'ArrowLeft')
+  const s3 = settle('5 of 5')
+  check(
+    `${label}: ArrowLeft again wraps to 5 of 5`,
+    s3.label === '5 of 5' && s3.count === '5 of 5',
+    JSON.stringify(s3),
+  )
+  ab('focus', '[aria-label="Next testimonial"]')
+  const f2 = state().focus
+  ab('press', 'ArrowRight')
+  const s4 = settle('1 of 5')
+  check(
+    `${label}: ArrowRight on the focused Next control wraps to 1 of 5`,
+    f2 === 'Next testimonial' && s4.label === '1 of 5' && s4.cite === s0.cite,
+    `focus on ${f2}; ${JSON.stringify(s4)}`,
   )
   clickSel('[aria-label="Previous testimonial"]')
-  ab('wait', '600')
-  check(`${label}: Previous wraps to 5 of 5`, state().label === '5 of 5')
+  const s5 = settle('5 of 5')
+  check(`${label}: Previous wraps to 5 of 5`, s5.label === '5 of 5', JSON.stringify(s5))
   ab('wait', '2500')
-  check(`${label}: no autoplay after waiting`, state().label === '5 of 5')
+  const s6 = state()
+  check(`${label}: no autoplay after waiting`, s6.label === '5 of 5', JSON.stringify(s6))
   const btn = evalJs(
     '(() => { const r = document.querySelector(\'[aria-label="Next testimonial"]\').getBoundingClientRect(); return Math.min(r.width, r.height) })()',
   )
@@ -470,18 +627,77 @@ function reviewPass(w) {
     `${label}: hero heading is an H2 in review mode`,
     evalJs("document.getElementById('hero-title').tagName") === 'H2',
   )
-  check(
-    `${label}: price and add-on note present`,
-    /\$1,000/.test(evalJs("document.querySelector('.review').textContent")) &&
-      /Final scope is discussed separately/.test(
-        evalJs("document.querySelector('.review').textContent"),
-      ),
+  // Keyboard order: skip link, then the two pitch controls, each visibly outlined.
+  ab('press', 'Tab')
+  ab('press', 'Tab')
+  const exitFocus = evalJs(
+    '(() => { const el = document.activeElement; const cs = getComputedStyle(el); return { text: el.textContent.trim(), outline: cs.outlineStyle, width: parseFloat(cs.outlineWidth) } })()',
   )
+  ab('press', 'Tab')
+  const anchorFocus = evalJs(
+    "(() => { const el = document.activeElement; return { text: el.textContent.trim(), href: el.getAttribute('href') } })()",
+  )
+  check(
+    `${label}: Tab reaches View customer site (outlined) then See what changed`,
+    exitFocus.text === 'View customer site' &&
+      exitFocus.outline === 'solid' &&
+      exitFocus.width >= 2 &&
+      anchorFocus.text === 'See what changed' &&
+      anchorFocus.href === '#review-changes',
+    `${JSON.stringify(exitFocus)} then ${JSON.stringify(anchorFocus)}`,
+  )
+  // textContent, not innerText: the tiles and rows are visibility:hidden until
+  // their reveal tween runs, and innerText would skip them.
+  const pitch = evalJs(
+    "(() => { const r = document.querySelector('.review'); const text = r.textContent.replace(/\\s+/g, ' ').trim(); return { text, words: text.split(' ').length, tiles: r.querySelectorAll('.review-tile').length, rows: r.querySelectorAll('.review-flow__row').length, anchor: r.querySelector('a[href=\"#review-changes\"]')?.textContent.trim() ?? '', target: !!document.getElementById('review-changes'), buttons: r.querySelectorAll('button').length } })()",
+  )
+  const dollars = pitch.text.match(/\$[\d,]+/g) ?? []
+  check(
+    `${label}: price and add-on sentence present, no invented add-on price`,
+    /\$1,000 flat/.test(pitch.text) &&
+      /Answers overflow or after-hours calls, collects the job details, and sends a callback summary\./.test(
+        pitch.text,
+      ) &&
+      dollars.length === 1 &&
+      dollars[0] === '$1,000',
+    `"${(pitch.text.match(/.{0,16}\$[\d,]+.{0,16}/) ?? ['no dollar amount'])[0]}"; amounts ${dollars.join(', ') || 'none'}`,
+  )
+  check(
+    `${label}: three proof tiles, four change rows, one exit button`,
+    pitch.tiles === 3 && pitch.rows === 4 && pitch.buttons === 1,
+    `${pitch.tiles} tiles, ${pitch.rows} rows, ${pitch.buttons} buttons`,
+  )
+  check(
+    `${label}: pitch reads in one glance (under 200 words)`,
+    pitch.words < 200,
+    `${pitch.words} words`,
+  )
+  check(
+    `${label}: "See what changed" is an in-page anchor to the change ledger`,
+    pitch.anchor === 'See what changed' && pitch.target,
+  )
+  clickSel('a[href="#review-changes"]')
+  const anchoredProbe =
+    "(() => { const r = document.getElementById('review-changes').getBoundingClientRect(); return { hash: location.hash, top: Math.round(r.top), inner: window.innerHeight } })()"
+  const anchored = until(
+    anchoredProbe,
+    (a) => a.hash === '#review-changes' && a.top >= -2 && a.top < a.inner,
+  )
+  check(
+    `${label}: the anchor scrolls the change ledger into view`,
+    anchored.hash === '#review-changes' && anchored.top >= -2 && anchored.top < anchored.inner,
+    JSON.stringify(anchored),
+  )
+  evalJs('window.scrollTo(0, 0); "ok"')
+  until('window.scrollY === 0')
   clickSel('.review .btn--ink')
-  ab('wait', '500')
+  until("!document.querySelector('.review')")
   check(
     `${label}: query parameter removed without reload`,
-    evalJs('location.search') === '' && evalJs('location.pathname') === new URL(BASE).pathname,
+    evalJs('location.search') === '' &&
+      evalJs('location.pathname') === new URL(BASE).pathname &&
+      evalJs('location.hash') === '#review-changes',
+    `${evalJs('location.pathname')}${evalJs('location.search')}${evalJs('location.hash')}`,
   )
   check(
     `${label}: review layer removed, hero owns the H1`,
@@ -492,16 +708,12 @@ function reviewPass(w) {
   check(
     `${label}: focus moved to the hero heading`,
     evalJs("document.activeElement === document.getElementById('hero-title')"),
+    `focus on ${activeDesc()}`,
   )
-  // Simulated reply action stays local.
-  open(`${BASE}?review=1`, w)
-  clickSel('.review__reply button')
-  ab('wait', '200')
   check(
-    `${label}: reply action is simulated and says so`,
-    /Nothing was sent from this page/.test(
-      evalJs("document.getElementById('review-reply-note').textContent"),
-    ),
+    `${label}: no sticky dock while the review layer was up`,
+    evalJs("!!document.querySelector('.dock')") === true,
+    'dock returns only after exiting review',
   )
   const offenders = networkOffenders()
   check(
@@ -513,7 +725,7 @@ function reviewPass(w) {
 
 function dockPass(w) {
   const label = `${w}px dock`
-  open(BASE, w, 740)
+  open(BASE, w, { height: 740 })
   const top = evalJs(
     "(() => { const d = document.querySelector('.dock'); return { vis: getComputedStyle(d).visibility, hero: !!document.querySelector('[data-hero-actions]') } })()",
   )
@@ -522,20 +734,50 @@ function dockPass(w) {
     top.vis === 'hidden' || top.hero === false,
     top.vis,
   )
-  evalJs("window.scrollTo(0, document.body.scrollHeight); 'ok'")
-  ab('wait', '900')
-  const r = evalJs(
-    "(() => { const d = document.querySelector('.dock'); const dr = d.getBoundingClientRect(); const links = Array.from(document.querySelectorAll('.site-footer a')); const last = links[links.length - 1].getBoundingClientRect(); const btns = Array.from(d.querySelectorAll('a, button')).map((b) => b.getBoundingClientRect().height); return { vis: getComputedStyle(d).visibility, bottom: dr.bottom, inner: window.innerHeight, lastBottom: last.bottom, dockTop: dr.top, pad: parseFloat(getComputedStyle(document.body).paddingBottom), h: dr.height, btns, focusable: Array.from(d.querySelectorAll('a, button')).length } })()",
+  // The root has `scroll-behavior: smooth`, so a plain scrollTo animates for
+  // over a second while the dock's data-visible attribute is set within the
+  // first few hundred pixels; measuring then finds the footer still far below
+  // the viewport. Jump instantly to the document end, where body padding is
+  // what keeps the last footer link clear of the dock, and wait for scrollY to
+  // reach the maximum and hold it across two reads before measuring.
+  evalJs(
+    "window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }); 'ok'",
+  )
+  // The dock is shown by an IntersectionObserver callback and slides in over
+  // 0.3s; measure only once the attribute is set and no transition is running.
+  const shown = until(
+    "(() => { const d = document.querySelector('.dock'); return d.hasAttribute('data-visible') && d.getAnimations().length === 0 })()",
+  )
+  check(`${label}: dock shown once the hero buttons leave the viewport`, shown === true)
+  const settled = until(
+    '(() => { const max = document.documentElement.scrollHeight - window.innerHeight; const y = window.scrollY; const prev = window.__qaScrollY; window.__qaScrollY = y; return { y, max, atEnd: Math.abs(y - max) <= 1, stable: prev === y } })()',
+    (s) => s.atEnd && s.stable,
   )
   check(
-    `${label}: dock visible after the hero and pinned to the bottom`,
-    r.vis === 'visible' && Math.abs(r.bottom - r.inner) <= 1,
-    `bottom ${r.bottom} vs ${r.inner}`,
+    `${label}: page scrolled to the document end and holding`,
+    settled.atEnd && settled.stable,
+    `scrollY ${settled.y} vs max ${settled.max}`,
+  )
+  const r = evalJs(
+    "(() => { const d = document.querySelector('.dock'); const cs = getComputedStyle(d); const dr = d.getBoundingClientRect(); const vv = window.visualViewport; const links = Array.from(document.querySelectorAll('.site-footer a')); const last = links[links.length - 1].getBoundingClientRect(); const btns = Array.from(d.querySelectorAll('a, button')).map((b) => b.getBoundingClientRect().height); const rule = Array.from(document.styleSheets).flatMap((s) => { try { return Array.from(s.cssRules) } catch { return [] } }).flatMap((r) => (r.cssRules ? Array.from(r.cssRules) : [r])).find((r) => r.selectorText === '.dock' && r.style.position === 'fixed'); return { vis: cs.visibility, position: cs.position, bottom: dr.bottom, inner: window.innerHeight, vvBottom: vv ? vv.offsetTop + vv.height : null, lastTop: last.top, lastBottom: last.bottom, dockTop: dr.top, pad: parseFloat(getComputedStyle(document.body).paddingBottom), h: dr.height, btns, safeArea: rule ? rule.style.paddingBottom : 'no fixed .dock rule' } })()",
+  )
+  check(
+    `${label}: dock visible after the hero, fixed, and pinned to the viewport bottom`,
+    r.vis === 'visible' &&
+      r.position === 'fixed' &&
+      Math.abs(r.bottom - r.inner) <= 1 &&
+      (r.vvBottom === null || Math.abs(r.bottom - r.vvBottom) <= 1),
+    `${r.position}, bottom ${r.bottom} vs innerHeight ${r.inner}, visual viewport ${r.vvBottom}`,
+  )
+  check(
+    `${label}: dock padding reserves the safe-area inset`,
+    /env\(safe-area-inset-bottom/.test(r.safeArea),
+    r.safeArea,
   )
   check(
     `${label}: dock does not cover the last footer link`,
-    r.lastBottom <= r.dockTop + 0.5,
-    `link bottom ${r.lastBottom}, dock top ${r.dockTop}`,
+    r.lastTop >= 0 && r.lastBottom <= r.dockTop + 0.5,
+    `link top ${r.lastTop}, bottom ${r.lastBottom}, dock top ${r.dockTop}`,
   )
   check(
     `${label}: body reserves space for the dock`,
@@ -582,10 +824,7 @@ function targetsAndFocusPass(w) {
 
 function reducedMotionPass(w, url) {
   const label = `${w}px ${url.includes('review=1') ? 'review' : 'customer'} reduced motion`
-  ab('set', 'viewport', String(w), '900')
-  ab('set', 'media', 'light', 'reduced-motion')
-  ab('open', url)
-  ab('wait', '--load', 'networkidle')
+  open(url, w, { reducedMotion: true })
   const r = evalJs(
     "(() => { const hidden = Array.from(document.querySelectorAll('[data-reveal], .statement__word, .hero__word-inner, .hero__lede, .hero__plane')).filter((el) => { const cs = getComputedStyle(el); return Number(cs.opacity) < 0.99 || cs.visibility === 'hidden' || (cs.transform !== 'none' && cs.transform !== 'matrix(1, 0, 0, 1, 0, 0)') || (cs.clipPath !== 'none' && !/^inset\\(0(px|%)?( 0(px|%)?){0,3}\\)$/.test(cs.clipPath)); }).length; const marquee = getComputedStyle(document.querySelector('.marquee__track')).animationName; const sticky = Array.from(document.querySelectorAll('.stack__card')).filter((c) => getComputedStyle(c).position === 'sticky').length; const pinned = !!document.querySelector('.pin-spacer'); return { hidden, marquee, sticky, pinned } })()",
   )
@@ -599,26 +838,40 @@ function reducedMotionPass(w, url) {
     r.marquee === 'none' && r.sticky === 0 && r.pinned === false,
     JSON.stringify(r),
   )
-  ab('set', 'media', 'light')
 }
 
+const only = new Set(
+  (process.env.QA_ONLY ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
+)
+const wants = (name) => only.size === 0 || only.has(name)
+
 try {
-  for (const w of widths) {
-    layoutPass(BASE, w)
-    layoutPass(`${BASE}?review=1`, w)
+  bootstrapTab()
+  if (wants('layout')) {
+    for (const w of widths) {
+      layoutPass(BASE, w)
+      layoutPass(`${BASE}?review=1`, w)
+    }
   }
-  bentoPass()
+  if (wants('bento')) bentoPass()
   for (const w of [390, 1440]) {
-    requestPass(w)
-    carouselPass(w)
-    reviewPass(w)
-    targetsAndFocusPass(w)
-    reducedMotionPass(w, BASE)
-    reducedMotionPass(w, `${BASE}?review=1`)
+    if (wants('request')) requestPass(w)
+    if (wants('carousel')) carouselPass(w)
+    if (wants('review')) reviewPass(w)
+    if (wants('targets')) targetsAndFocusPass(w)
+    if (wants('motion')) {
+      reducedMotionPass(w, BASE)
+      reducedMotionPass(w, `${BASE}?review=1`)
+    }
   }
-  receptionistPass(390)
-  dockPass(390)
-  dockPass(320)
+  if (wants('receptionist')) receptionistPass(390)
+  if (wants('dock')) {
+    dockPass(390)
+    dockPass(320)
+  }
 } finally {
   try {
     ab('close')
