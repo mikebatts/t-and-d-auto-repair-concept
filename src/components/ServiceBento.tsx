@@ -33,8 +33,7 @@ export default function ServiceBento() {
             Four kinds of work. One conversation.
           </h2>
           <p className="chapter__lede">
-            Mechanical, electrical, bodywork, and the state inspection are all handled at one
-            address, so the car stays in one place and you talk to one shop.
+            All four at one address, so the car stays in one place and you talk to one shop.
           </p>
         </header>
 

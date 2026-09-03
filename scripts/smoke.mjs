@@ -152,6 +152,15 @@ check('robots.txt disallows everything', /User-agent: \*\s+Disallow: \//.test(ro
 const required = [
   'One shop for the whole car.',
   'Mechanical, collision, electrical, and New York State inspections',
+  'by ASE-certified technicians. On 4th Avenue since ',
+  'Find the real problem, fix it with the right parts, say what it costs, and earn the next visit.',
+  'ASE-certified technicians',
+  'Years of experience and ongoing training.',
+  'Current scanners, computers, and tools across the shop.',
+  'Only genuine OEM and highest-quality aftermarket parts.',
+  'No hidden fees. No surprises.',
+  'cost, honest staff, and a helpful team',
+  'Old and new, foreign and domestic.',
   'Request service',
   'Call now',
   '(718) 972-6620',
@@ -170,17 +179,20 @@ const required = [
   'Concept demo—not live',
   'After-hours calls, captured.',
   'A website concept for ',
-  'Your reputation, easier to act on.',
+  'What sets T&D apart, up front.',
+  'ASE-certified technicians, accurate diagnosis, quality parts, clear pricing.',
   'View customer site',
   'See what changed',
-  'Trust up front',
-  'One request flow',
-  'Optional call capture',
+  'reviews, shown first',
+  'In the first line',
+  'Mechanical to collision, one roof',
   'What changed',
-  'Visible immediately',
+  'Strengths in expandable tiles',
+  'Four proof points, in plain view',
+  'Google rating off-site',
+  ' stars up front',
   'Examples + a next step',
   'Guided request form',
-  'Optional callback summary',
   '$1,000',
   'Finish the site, connect the domain, hand it over.',
   'Mobile-first site',
@@ -206,16 +218,25 @@ check(
 )
 // The condensed owner pitch replaced the long thesis, the wireframe frames,
 // the five-row comparison, the "What's kept" list, and the simulated reply.
+// The messaging pass then retitled the pitch around T&D's own differentiators
+// and folded the after-hours row into the add-on strip.
 for (const gone of [
   'You already have the trust',
   'What’s kept',
   'What stays yours',
   'Reply to this email',
   'frame__screen',
-  'ASE Certified',
+  'Your reputation, easier to act on.',
+  'Optional callback summary',
 ]) {
   check(`bundle no longer carries “${gone}”`, !js.includes(gone))
 }
+// ASE certification is T&D's own published claim about its technicians. It is
+// stated in words only; no certification mark, seal, or logo is recreated.
+check(
+  'ASE certification is stated in words, never as a recreated mark',
+  js.includes('ASE-certified technicians') && !/ase\.com|blue seal|ase (logo|mark|seal)/i.test(js),
+)
 check(
   'the only price in the bundle is $1,000 (no invented add-on pricing)',
   (js.match(/\$\d{1,3}(,\d{3})+/g) ?? []).every((m) => m === '$1,000'),

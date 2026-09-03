@@ -14,11 +14,64 @@
   display: inline;
 }
 
+/* T&D's four published standards: a hairline ledger built like the proof band. */
+.statement__standards {
+  display: grid;
+  gap: 1px;
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+
+.statement__standard {
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
+  padding: 1.25rem 1.1rem 1.35rem;
+  background: var(--bg);
+  min-width: 0;
+}
+
+.statement__standard::before {
+  content: '';
+  width: 1.25rem;
+  height: 2px;
+  margin-bottom: 0.35rem;
+  background: var(--lift-soft);
+}
+
+.statement__standard-title {
+  font: 700 clamp(1.15rem, 1rem + 0.5vw, 1.4rem) / 1.15 var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+.statement__standard-text {
+  font-size: 0.95rem;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
+
 .statement__note {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-top: 2.5rem;
-  max-width: 52ch;
+  margin-top: 2rem;
+  max-width: 60ch;
   color: var(--fg-muted);
+}
+
+@media (min-width: 600px) {
+  .statement__standards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .statement__standards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .statement__standard {
+    padding: 1.5rem 1.5rem 1.65rem;
+  }
 }

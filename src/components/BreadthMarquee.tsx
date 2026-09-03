@@ -12,7 +12,7 @@ export default function BreadthMarquee() {
     <section className="breadth surface-dark" aria-labelledby="breadth-title">
       <div className="container breadth__head">
         <h2 id="breadth-title" className="breadth__title">
-          Foreign and domestic. Gas, diesel, hybrid, and electric.
+          Old and new, foreign and domestic. Gas, diesel, hybrid, and electric.
         </h2>
         <p className="breadth__note">
           <Globe size={16} aria-hidden="true" />

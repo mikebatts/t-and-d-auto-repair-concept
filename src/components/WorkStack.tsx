@@ -18,13 +18,13 @@ const cards: Card[] = [
   {
     key: 'mechanical',
     title: 'Engines, drivetrains, and the everyday work.',
-    body: 'From an oil change to an engine out of the car. Customers describe the same thing over and over: told what the car needs, and what it doesn’t.',
+    body: 'From an oil change to an engine out of the car. Customers keep saying the same thing: told what the car needs, and what it doesn’t.',
     image: images.mechanical,
   },
   {
     key: 'electrical',
     title: 'Warning lights, read properly.',
-    body: 'Scanners and diagnostic tools on the bench, and a walk through the reading instead of a shrug. Hybrids and EVs included.',
+    body: 'Current scanners and computers on the bench, then a walk through the reading instead of a shrug. Hybrids and EVs included.',
     image: images.electrical,
   },
   {
@@ -81,8 +81,8 @@ export default function WorkStack() {
             What comes through the door.
           </h2>
           <p className="chapter__lede">
-            Three kinds of jobs, and what customers say about how they are handled. The images are
-            concept renders, not photographs of the shop.
+            Three kinds of jobs, and how customers describe them. The images are concept renders,
+            not photographs of the shop.
           </p>
         </header>
 

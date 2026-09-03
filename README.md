@@ -23,11 +23,13 @@ If the business would like this preview taken down, it will be removed promptly.
 | Owner review, then the concept | `https://mikebatts.github.io/t-and-d-auto-repair-concept/?review=1` |
 
 `?review=1` renders an owner-facing decision screen first, kept to one glance:
-a six-word headline, a one-line lede with the Google rating and review count,
-three proof tiles (trust up front, one request flow, optional call capture), a
-four-row "what changed" ledger with the checked date as a footnote, the price
-(`$1,000 flat`, three inclusions), the optional AI phone receptionist as a
-separate one-sentence strip with no price attached, and a single disclaimer.
+a six-word headline, a two-line lede naming the differentiators T&D already
+publishes (ASE-certified technicians, accurate diagnosis, quality parts, clear
+pricing), three proof tiles (the 4.9 rating shown first, ASE-certified in the
+opening line, the whole car under one roof), a four-row "what changed" ledger
+with the checked date as a footnote, the price (`$1,000 flat`, three
+inclusions), the optional AI phone receptionist as a separate one-sentence
+strip with no price attached, and a single disclaimer.
 The only controls are **View customer site** and an in-page **See what
 changed** anchor; there is no simulated reply action. **View customer site**
 removes the query parameter with `history.replaceState` (no reload, GitHub
@@ -42,27 +44,33 @@ customer site.
 Every fact on the customer site was verified on September 2, 2026 against the
 shop's own website (`tdautony.com`) and its Google Business Profile.
 
-| Fact                                                                             | Source                                                       |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Name, address, shop phone, hours                                                 | Google Business Profile and official site                    |
-| Cell `(917) 295-1205`, `thetdauto@gmail.com`                                     | Official site                                                |
-| 4.9 rating from 102 Google reviews                                               | Google Business Profile, checked 2026-09-02                  |
-| Since 1992; management and ownership refreshed in 2018                           | Official site About section (T&D's claim)                    |
-| Services: Mechanical, Bodywork, Electrical, Inspection                           | Official site                                                |
-| Foreign and domestic; gas, diesel, hybrid, electric                              | Official site (T&D's claim)                                  |
-| Five testimonials (David Schrager, Mellica Askari, Angela Lee, Elina Street, TM) | Official site testimonial carousel, quoted as exact excerpts |
-| Review themes: honesty, explanation, communication, price, fast/reliable         | Google review topic summary                                  |
+| Fact                                                                                      | Source                                                       |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Name, address, shop phone, hours                                                          | Google Business Profile and official site                    |
+| Cell `(917) 295-1205`, `thetdauto@gmail.com`                                              | Official site                                                |
+| 4.9 rating from 102 Google reviews                                                        | Google Business Profile, checked 2026-09-02                  |
+| Since 1992; management and ownership refreshed in 2018                                    | Official site About section (T&D's claim)                    |
+| Services: Mechanical, Bodywork, Electrical, Inspection                                    | Official site                                                |
+| Old and new, foreign and domestic; gas, diesel, hybrid, electric                          | Official site (T&D's claim)                                  |
+| ASE-certified technicians with years of experience and ongoing training                   | Official site "Why Choose TD Auto?" (T&D's claim)            |
+| Accurate diagnosis with current equipment, computers, scanners, and tools                 | Official site "Why Choose TD Auto?" (T&D's claim)            |
+| Only genuine, OEM, and highest-quality aftermarket parts                                  | Official site "Why Choose TD Auto?" (T&D's claim)            |
+| Clear pricing with no hidden fees or surprises                                            | Official site "Why Choose TD Auto?" (T&D's claim)            |
+| Five testimonials (David Schrager, Mellica Askari, Angela Lee, Elina Street, TM)          | Official site testimonial carousel, quoted as exact excerpts |
+| Review topics: cost, honest staff, helpful team (the three most frequent); exhaust repair | Google review topic summary, checked 2026-09-02              |
 
 Service examples inside the bento are limited to the shop's published claims
-and jobs its customers describe (inspection, oil change, check engine light,
-engine and drivetrain work, dent and collision repair, insurance-related
-repairs, scanner diagnostics, hybrid and electric vehicles).
+and jobs its customers describe (inspection, oil change, check engine and
+warning lights, engine, drivetrain, and exhaust repair, OEM and quality
+aftermarket parts, dent and collision repair, insurance-related repairs,
+scanner diagnostics, hybrid and electric vehicles).
 
 Not claimed anywhere: owner or legal-ownership names, prices other than the
 concept's own `$1,000 flat`, turnaround or response times, warranties,
 guarantees, appointment availability, live receptionist status, missed-call or
 booking outcomes, or any service beyond the four published areas. ASE
-certification is not mentioned, and no certification mark is recreated.
+certification appears only as T&D's own published claim about its
+technicians, in words; no certification mark, seal, or logo is recreated.
 
 No Google review is quoted. No listing, Google, or reference photograph is
 shipped.
@@ -114,7 +122,9 @@ right bleed, still 4:3 and bottom-aligned to the section edge, on desktop);
 a Google proof ledger immediately after the hero; a gapless 12x2 capability
 bento (Mechanical 7, Electrical 5, Bodywork 5, NYS Inspection 7,
 `grid-auto-flow: dense`, 2x2 on tablets, one column on phones); a scrubbed
-statement; three stacked work cards; the testimonial carousel; the breadth
+statement over a four-cell ledger of T&D's published standards (ASE-certified
+technicians, accurate diagnosis, quality parts, clear pricing); three stacked
+work cards; the testimonial carousel; the breadth
 marquee; the after-hours concept; contact, hours, and a request panel; the
 footer disclosure. Phones get a fixed Call / Request dock with safe-area
 padding that stays hidden while the hero's own buttons are on screen.

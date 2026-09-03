@@ -1,13 +1,21 @@
 import { useRef } from 'react'
 import { gsap, MOTION_OK, useGSAP } from '../lib/gsap'
+import { business, standards } from '../lib/business'
+import { useReveal } from '../lib/useReveal'
 import './Statement.css'
 
+/** The shop's own philosophy in one line: accurate diagnosis, the right parts, clear pricing, and a customer kept for years. */
 const TEXT =
-  'Straight answers on what’s wrong, what it costs, and what can wait. Mechanical and collision under one roof, so the same shop sees the job through.'
+  'Find the real problem, fix it with the right parts, say what it costs, and earn the next visit.'
 
-/** Scrubbing text reveal: each word brightens as the statement moves up the viewport. */
+/**
+ * Scrubbing text reveal: each word brightens as the statement moves up the
+ * viewport. Under it, T&D's four published standards as a hairline ledger,
+ * and the Google review topics that corroborate them.
+ */
 export default function Statement() {
   const scope = useRef<HTMLElement>(null)
+  useReveal(scope)
 
   useGSAP(
     () => {
@@ -46,10 +54,22 @@ export default function Statement() {
             </span>
           ))}
         </p>
+        <ul className="statement__standards" aria-label="T&amp;D’s published standards">
+          {standards.map((s, i) => (
+            <li
+              key={s.title}
+              className="statement__standard"
+              data-reveal
+              data-reveal-delay={i * 0.08}
+            >
+              <strong className="statement__standard-title">{s.title}</strong>
+              <span className="statement__standard-text">{s.text}</span>
+            </li>
+          ))}
+        </ul>
         <p className="statement__note">
           <span className="tick" aria-hidden="true" />
-          The things customers mention most in their reviews: honesty, explanation, communication,
-          and a fair price.
+          T&amp;D’s own standards. On Google, reviewers most often mention {business.google.topics}.
         </p>
       </div>
     </section>

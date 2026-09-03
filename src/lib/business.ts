@@ -22,9 +22,38 @@ export const business = {
     { days: 'Sunday', time: 'Closed' },
   ],
   hoursShort: 'Mon–Sat · 8–5',
-  google: { rating: '4.9', reviews: '102', checked: 'September 2, 2026' },
+  google: {
+    rating: '4.9',
+    reviews: '102',
+    checked: 'September 2, 2026',
+    /**
+     * The three most frequent review topics on the profile (cost 17, honest
+     * staff 7, helpful team 5). Used as corroboration only; no review is quoted.
+     */
+    topics: 'cost, honest staff, and a helpful team',
+  },
   since: '1992',
 } as const
+
+export interface Standard {
+  title: string
+  text: string
+}
+
+/**
+ * The shop's own operating standards, paraphrased from the "Why Choose TD
+ * Auto?" section of tdautony.com: ASE-certified technicians with years of
+ * experience and ongoing training; accurate diagnosis with current equipment,
+ * computers, scanners, and tools; only genuine, OEM, and highest-quality
+ * aftermarket parts; clear pricing with no hidden fees or surprises. These are
+ * T&D's claims about itself, not customer commentary.
+ */
+export const standards: Standard[] = [
+  { title: 'ASE-certified technicians', text: 'Years of experience and ongoing training.' },
+  { title: 'Accurate diagnosis', text: 'Current scanners, computers, and tools across the shop.' },
+  { title: 'Quality parts', text: 'Only genuine OEM and highest-quality aftermarket parts.' },
+  { title: 'Clear pricing', text: 'No hidden fees. No surprises.' },
+]
 
 export type ServiceKey = 'mechanical' | 'electrical' | 'bodywork' | 'inspection'
 
@@ -34,7 +63,7 @@ export interface Service {
   /** Desktop bento span on a 12-column grid. 7 + 5 per row = 24 of 24 cells. */
   span: 7 | 5
   lede: string
-  /** Concrete examples drawn from the shop's published claims and its customers' reviews. */
+  /** Concrete examples drawn from the shop's published claims and the jobs its customers describe. */
   examples: string[]
 }
 
@@ -45,18 +74,18 @@ export const services: Service[] = [
     span: 7,
     lede: 'Engines, drivetrains, and the everyday service that keeps a car on the road.',
     examples: [
-      'Check engine lights',
       'Oil changes and routine service',
-      'Engine and drivetrain work',
+      'Engine, drivetrain, and exhaust repair',
+      'Genuine OEM or quality aftermarket parts',
     ],
   },
   {
     key: 'electrical',
     title: 'Electrical',
     span: 5,
-    lede: 'Warning lights read with a scanner, then explained in plain language.',
+    lede: 'Warning lights read with current scanners, then explained in plain language.',
     examples: [
-      'Warning lights read with a scanner',
+      'Check engine and warning lights',
       'Faults that only show up sometimes',
       'Hybrid and electric vehicles included',
     ],

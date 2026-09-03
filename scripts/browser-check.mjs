@@ -268,7 +268,7 @@ function layoutPass(url, w) {
   check(
     `${label}: H1 text is the expected one`,
     review
-      ? after.h1Text === 'Your reputation, easier to act on.'
+      ? after.h1Text === 'What sets T&D apart, up front.'
       : after.h1Text === 'One shop for the whole car.',
     after.h1Text,
   )

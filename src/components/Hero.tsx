@@ -1,5 +1,5 @@
 import { Fragment, useRef } from 'react'
-import { ArrowRight, Phone } from 'lucide-react'
+import { ArrowRight, Phone, Star } from 'lucide-react'
 import { gsap, MOTION_OK, useGSAP } from '../lib/gsap'
 import { business } from '../lib/business'
 import { images } from '../lib/images'
@@ -67,7 +67,8 @@ export default function Hero({ headingLevel }: HeroProps) {
 
         <div className="hero__copy">
           <p className="hero__lede">
-            Mechanical, collision, electrical, and New York State inspections—handled on 4th Avenue.
+            Mechanical, collision, electrical, and New York State inspections, by ASE-certified
+            technicians. On 4th Avenue since {business.since}.
           </p>
           <div className="hero__actions" data-hero-actions>
             <button
@@ -85,6 +86,13 @@ export default function Hero({ headingLevel }: HeroProps) {
           </div>
           <p className="hero__ledger">
             <span className="tick" aria-hidden="true" />
+            <span className="hero__ledger-rating">
+              <Star size={14} aria-hidden="true" />
+              {business.google.rating} on Google
+            </span>
+            <span className="hero__ledger-sep" aria-hidden="true">
+              ·
+            </span>
             {business.street}, Brooklyn
             <span className="hero__ledger-sep" aria-hidden="true">
               ·

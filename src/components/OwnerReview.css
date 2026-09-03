@@ -82,7 +82,6 @@
   align-self: end;
   font: 700 clamp(1.45rem, 1.1rem + 1.1vw, 1.9rem) / 1 var(--font-display);
   letter-spacing: -0.02em;
-  white-space: nowrap;
 }
 
 .review-tile__star {

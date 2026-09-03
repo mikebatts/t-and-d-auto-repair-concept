@@ -82,6 +82,19 @@
   color: var(--lift-soft);
 }
 
+.hero__ledger-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.hero__ledger-rating svg {
+  color: var(--lift-soft);
+  fill: var(--lift-soft);
+}
+
 /* The storefront render is a 21:9 banner whose sign, address, and phone sit
    between 24% and 72% of its width. Every plane below is landscape with the
    full image height visible, and the crop is centered on the sign, so the

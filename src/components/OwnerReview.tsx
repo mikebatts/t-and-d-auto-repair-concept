@@ -2,10 +2,10 @@ import { useRef } from 'react'
 import {
   ArrowDown,
   ArrowRight,
+  BadgeCheck,
+  Car,
   ClipboardList,
   Eye,
-  LayoutGrid,
-  Moon,
   PhoneIncoming,
   Rocket,
   ShieldCheck,
@@ -17,6 +17,8 @@ import { business } from '../lib/business'
 import { useReveal } from '../lib/useReveal'
 import './OwnerReview.css'
 
+const TITLE = 'What sets T&D apart, up front.'
+
 interface OwnerReviewProps {
   onExit: () => void
 }
@@ -26,12 +28,17 @@ interface Change {
   concept: string
 }
 
-/** Every "today" entry was checked against tdautony.com and the Google profile on September 2, 2026. */
+/**
+ * Every "today" entry was checked against tdautony.com and the Google profile
+ * on September 2, 2026: the shop's strengths sit in an expandable "Why Choose
+ * TD Auto?" section, the Google rating is not shown on the site, the four
+ * services are icon labels, and contact is by phone or email.
+ */
 const changes: Change[] = [
-  { today: 'Google reputation', concept: 'Visible immediately' },
+  { today: 'Strengths in expandable tiles', concept: 'Four proof points, in plain view' },
+  { today: 'Google rating off-site', concept: `${business.google.rating} stars up front` },
   { today: 'Four service labels', concept: 'Examples + a next step' },
   { today: 'Call or email only', concept: 'Guided request form' },
-  { today: 'No structured after-hours intake', concept: 'Optional callback summary' },
 ]
 
 const included: { icon: LucideIcon; text: string }[] = [
@@ -59,11 +66,11 @@ export default function OwnerReview({ onExit }: OwnerReviewProps) {
             Repair
           </p>
           <h1 id="review-title" className="review__title" tabIndex={-1}>
-            Your reputation, easier to act on.
+            {TITLE}
           </h1>
           <p className="review__lede">
-            {business.google.rating} stars. {business.google.reviews} reviews. One mobile-first site
-            for calls, service requests, and after-hours leads.
+            ASE-certified technicians, accurate diagnosis, quality parts, clear pricing. Your site
+            already says it; this concept makes it scannable on a phone, one tap from a call.
           </p>
           <div className="review__actions">
             <button type="button" className="btn btn--ink btn--lg" onClick={onExit}>
@@ -87,21 +94,23 @@ export default function OwnerReview({ onExit }: OwnerReviewProps) {
               <Star size={17} aria-hidden="true" className="review-tile__star" />
               <span className="visually-hidden">stars on Google</span>
             </span>
-            <span className="review-tile__small">Trust up front</span>
+            <span className="review-tile__small">
+              {business.google.reviews} reviews, shown first
+            </span>
           </li>
           <li className="review-tile" data-reveal data-reveal-delay={0.08}>
             <span className="review-tile__icon" aria-hidden="true">
-              <LayoutGrid size={20} strokeWidth={1.75} />
+              <BadgeCheck size={20} strokeWidth={1.75} />
             </span>
-            <span className="review-tile__big">4 services</span>
-            <span className="review-tile__small">One request flow</span>
+            <span className="review-tile__big">ASE-certified</span>
+            <span className="review-tile__small">In the first line</span>
           </li>
           <li className="review-tile" data-reveal data-reveal-delay={0.16}>
             <span className="review-tile__icon" aria-hidden="true">
-              <Moon size={20} strokeWidth={1.75} />
+              <Car size={20} strokeWidth={1.75} />
             </span>
-            <span className="review-tile__big">After hours</span>
-            <span className="review-tile__small">Optional call capture</span>
+            <span className="review-tile__big">Whole car</span>
+            <span className="review-tile__small">Mechanical to collision, one roof</span>
           </li>
         </ul>
 
@@ -160,9 +169,7 @@ export default function OwnerReview({ onExit }: OwnerReviewProps) {
                 </li>
               ))}
             </ul>
-            <p className="review-offer__next">
-              To go ahead, reply to the email that brought you here.
-            </p>
+            <p className="review-offer__next">To go ahead, reply to the email.</p>
           </section>
           <aside className="review-addon" aria-label="Optional add-on">
             <PhoneIncoming size={20} aria-hidden="true" />
